@@ -19,7 +19,7 @@ Build mode: fast
   Learner check: Open PlotTwist, click `Try a Sample`, explore the input and results screens, and say what feels right or wrong about the product's look, hierarchy, and overall experience.
   Commit: `Build PlotTwist sample comparison flow`
 
-- [ ] **2. Pasted job and offer text produce a real live comparison**
+- [x] **2. Pasted job and offer text produce a real live comparison**
   Becomes usable: A user can paste an original job posting and final offer, click Compare, and receive a real evidence-linked comparison produced from those sources.
   Why now: This proves PlotTwist's unique kernel early. It also tests the biggest architectural assumption: Gemini can extract predictable employment terms while PlotTwist's own deterministic logic correctly classifies Match, Changed, Missing, and New.
   PRD ref: `prd.md > Features and Behavior > Source Input`, `prd.md > Features and Behavior > Comparison`, `prd.md > Features and Behavior > Finding Statuses`, `prd.md > Features and Behavior > Evidence-Linked Findings`

@@ -77,6 +77,7 @@ function SourceCard({
   subtitle: string;
 }) {
   const [mode, setMode] = useState<InputMode>("upload");
+  const [selectedFileName, setSelectedFileName] = useState("");
 
   return (
     <section className="rounded-[24px] border border-[#e4e1db] bg-[#fdfcf9] p-5 shadow-[0_12px_32px_rgba(35,49,77,0.035)] sm:p-7">
@@ -116,13 +117,23 @@ function SourceCard({
 
       {mode === "upload" && (
         <label className="group flex min-h-[205px] cursor-pointer flex-col items-center justify-center rounded-[18px] border border-dashed border-[#cbc7bf] bg-[#fbfaf7] px-6 text-center transition hover:border-[#9a968d] hover:bg-[#f8f6f1]">
-          <input type="file" accept=".pdf" className="hidden" />
+          <input
+  type="file"
+  name={fieldName === "postingText" ? "postingPdf" : "offerPdf"}
+  accept="application/pdf,.pdf"
+  onChange={(event) =>
+  setSelectedFileName(event.target.files?.[0]?.name ?? "")
+}
+  className="hidden"
+/>
 
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#efede7] text-[#23314d] transition group-hover:bg-[#e8e5de]">
             <UploadIcon />
           </div>
 
-          <p className="font-medium text-[#222222]">Drop a PDF here</p>
+          <p className="font-medium text-[#222222]">
+  {selectedFileName || "Drop a PDF here"}
+</p>
           <p className="mt-1 text-sm text-[#8a877f]">or click to browse</p>
 
           <span className="mt-5 text-xs text-[#aaa69d]">PDF · Max 10 MB</span>
@@ -176,9 +187,24 @@ async function handleCompare(event: FormEvent<HTMLFormElement>) {
     formData.get("offerText") ?? "",
   ).trim();
 
-  if (postingText.length < 80 || offerText.length < 80) {
+  const postingPdf = formData.get("postingPdf");
+  const offerPdf = formData.get("offerPdf");
+
+  const hasPostingPdf =
+    postingPdf instanceof File && postingPdf.size > 0;
+
+  const hasOfferPdf =
+    offerPdf instanceof File && offerPdf.size > 0;
+
+  const hasPostingText = postingText.length >= 80;
+  const hasOfferText = offerText.length >= 80;
+
+  const isPdfComparison = hasPostingPdf && hasOfferPdf;
+  const isTextComparison = hasPostingText && hasOfferText;
+
+  if (!isPdfComparison && !isTextComparison) {
     setCompareError(
-      "For now, choose Paste text for both documents and include the full job posting and offer.",
+      "Please use the same input type for both documents: upload two PDFs or paste both documents.",
     );
     return;
   }
@@ -187,16 +213,30 @@ async function handleCompare(event: FormEvent<HTMLFormElement>) {
   setIsComparing(true);
 
   try {
-    const response = await fetch("/api/compare", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        postingText,
-        offerText,
-      }),
-    });
+    let response: Response;
+
+    if (isPdfComparison) {
+      const pdfFormData = new FormData();
+
+      pdfFormData.append("postingPdf", postingPdf);
+      pdfFormData.append("offerPdf", offerPdf);
+
+      response = await fetch("/api/compare-pdf", {
+        method: "POST",
+        body: pdfFormData,
+      });
+    } else {
+      response = await fetch("/api/compare", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          postingText,
+          offerText,
+        }),
+      });
+    }
 
     const data = await response.json();
 
