@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
 
 type InputMode = "upload" | "paste" | "link";
 
@@ -67,10 +68,12 @@ function CheckIcon() {
 function SourceCard({
   number,
   title,
+  fieldName,
   subtitle,
 }: {
   number: string;
   title: string;
+  fieldName: string;
   subtitle: string;
 }) {
   const [mode, setMode] = useState<InputMode>("upload");
@@ -128,6 +131,7 @@ function SourceCard({
 
       {mode === "paste" && (
         <textarea
+        name={fieldName}
           placeholder="Paste the document text here..."
           className="min-h-[205px] w-full resize-none rounded-[18px] border border-[#dedbd4] bg-[#fbfaf7] p-4 text-sm leading-6 text-[#242424] outline-none transition placeholder:text-[#aaa69d] focus:border-[#23314d]"
         />
@@ -154,6 +158,71 @@ function SourceCard({
 }
 
 export default function Home() {
+  const router = useRouter();
+
+const [isComparing, setIsComparing] = useState(false);
+const [compareError, setCompareError] = useState("");
+
+async function handleCompare(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+
+  const formData = new FormData(event.currentTarget);
+
+  const postingText = String(
+    formData.get("postingText") ?? "",
+  ).trim();
+
+  const offerText = String(
+    formData.get("offerText") ?? "",
+  ).trim();
+
+  if (postingText.length < 80 || offerText.length < 80) {
+    setCompareError(
+      "For now, choose Paste text for both documents and include the full job posting and offer.",
+    );
+    return;
+  }
+
+  setCompareError("");
+  setIsComparing(true);
+
+  try {
+    const response = await fetch("/api/compare", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        postingText,
+        offerText,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || "PlotTwist couldn't complete the comparison.",
+      );
+    }
+
+    sessionStorage.setItem(
+      "plottwist-live-result",
+      JSON.stringify(data),
+    );
+
+    router.push("/results");
+  } catch (error) {
+    setCompareError(
+      error instanceof Error
+        ? error.message
+        : "PlotTwist couldn't complete the comparison.",
+    );
+  } finally {
+    setIsComparing(false);
+  }
+}
+
   return (
     <main className="min-h-screen bg-[#fafaf8]">
       <header className="border-b border-[#ece9e3]">
@@ -207,24 +276,41 @@ export default function Home() {
           </span>
         </div>
 
-        <div className="mt-10 grid gap-5 lg:grid-cols-2">
+        <form
+        id="compare-form"
+  onSubmit={handleCompare}
+  className="..."
+>
           <SourceCard
             number="1"
             title="Original job posting"
+            fieldName="postingText"
             subtitle="The role as it was advertised when you applied."
           />
 
           <SourceCard
             number="2"
             title="Final offer"
+            fieldName="offerText"
             subtitle="The offer letter or terms you actually received."
           />
-        </div>
+        </form>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3">
-          <button className="w-full max-w-[330px] rounded-xl bg-[#23314d] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(35,49,77,0.14)] transition hover:bg-[#1c2942]">
-            Compare my offer
-          </button>
+          <button
+  type="submit"
+  form="compare-form"
+  disabled={isComparing}
+  className="..."
+>
+  {isComparing ? "Comparing your offer..." : "Compare my offer"}
+</button>
+
+{compareError && (
+  <p className="mt-3 text-center text-sm text-[#a64b4b]">
+    {compareError}
+  </p>
+)}
 
           <Link
             href="/results"

@@ -9,7 +9,7 @@ Build mode: fast
 
 ## Slices
 
-- [ ] **1. A visitor can experience PlotTwist with the sample comparison**
+- [x] **1. A visitor can experience PlotTwist with the sample comparison**
   Becomes usable: PlotTwist runs as a real web app with the intended premium input screen. Clicking `Try a Sample` opens the dedicated results screen with fictional job-posting and offer data, meaningful differences, and visible evidence.
   Why now: This gives us a complete usable journey immediately and establishes the product's visual identity before adding live AI complexity. It also creates a guaranteed demo path that later slices can build on.
   PRD ref: `prd.md > The Core Journey`, `prd.md > Screens and Layout > Input Screen`, `prd.md > Screens and Layout > Results Screen`
@@ -61,7 +61,7 @@ Build mode: fast
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — after Slice 1, while visual and interaction feedback can still shape the live-comparison experience
+- [x] Early usable behavior explored — after Slice 1, while visual and interaction feedback can still shape the live-comparison experiencelive-comparison experience
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review

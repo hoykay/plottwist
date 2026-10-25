@@ -1,7 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+
+function subscribeToLiveResult() {
+  return () => {};
+}
+
+function getLiveResultSnapshot() {
+  return sessionStorage.getItem("plottwist-live-result");
+}
+
+function getServerLiveResultSnapshot() {
+  return null;
+}
 
 type Status = "changed" | "missing" | "new" | "match";
 
@@ -222,10 +234,59 @@ function DocumentPanel({
 
 export default function ResultsPage() {
   const [selectedId, setSelectedId] = useState(findings[0].id);
-  const selected =
-    findings.find((finding) => finding.id === selectedId) ?? findings[0];
 
-  const changedCount = findings.filter(
+const liveResult = useSyncExternalStore(
+  subscribeToLiveResult,
+  getLiveResultSnapshot,
+  getServerLiveResultSnapshot,
+);
+
+const isLiveComparison = liveResult !== null;
+
+const activeFindings: Finding[] = (() => {
+  if (!liveResult) {
+    return findings;
+  }
+
+  try {
+    const parsed = JSON.parse(liveResult);
+
+    const liveFindings: Finding[] = parsed.comparison.findings.map(
+      (finding: {
+        key: string;
+        label: string;
+        status: Status;
+        postingValue: string;
+        offerValue: string;
+        postingEvidence: string;
+        offerEvidence: string;
+        summary: string;
+        clarification?: string;
+      }) => ({
+        id: finding.key,
+        label: finding.label,
+        icon: "•",
+        status: finding.status,
+        postingValue: finding.postingValue,
+        offerValue: finding.offerValue,
+        explanation: finding.summary,
+        postingEvidence: finding.postingEvidence,
+        offerEvidence: finding.offerEvidence,
+        clarification: finding.clarification,
+      }),
+    );
+
+    return liveFindings.length > 0 ? liveFindings : findings;
+  } catch {
+    return findings;
+  }
+})();
+
+  const selected =
+  activeFindings.find((finding) => finding.id === selectedId) ??
+  activeFindings[0];
+
+  const changedCount = activeFindings.filter(
     (finding) => finding.status !== "match",
   ).length;
 
@@ -255,14 +316,30 @@ export default function ResultsPage() {
             <button className="border-b-2 border-[#a64b4b] pb-3 font-semibold text-[#a64b4b]">
               Overview
             </button>
-            <button className="pb-3 text-[#77736b]">All findings (6)</button>
-            <button className="pb-3 text-[#77736b]">
-              Things to clarify ({changedCount})
-            </button>
+            <button
+  onClick={() =>
+    document
+      .getElementById("findings-section")
+      ?.scrollIntoView({ behavior: "smooth" })
+  }
+  className="pb-3 text-[#77736b]"
+>
+  All findings ({activeFindings.length})
+</button>
+            <button
+  onClick={() =>
+    document
+      .getElementById("clarify-section")
+      ?.scrollIntoView({ behavior: "smooth" })
+  }
+  className="pb-3 text-[#77736b]"
+>
+  Things to clarify ({changedCount})
+</button>
           </div>
 
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#97938b]">
-            Sample comparison
+            {isLiveComparison ? "Live comparison" : "Sample comparison"}
           </p>
 
           <h1 className="font-serif text-[38px] font-medium leading-tight tracking-[-0.035em] text-[#171717] sm:text-[48px]">
@@ -272,16 +349,16 @@ export default function ResultsPage() {
           </h1>
 
           <p className="mt-2 text-sm text-[#7c7870]">
-            6 employment terms compared.
+            {activeFindings.length} employment terms compared
           </p>
         </div>
 
         <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            ["Changed", "2", "#f5e9c9", "#89611c"],
-            ["Missing", "1", "#f5d9d7", "#93423f"],
-            ["New", "1", "#dce8f3", "#3f6487"],
-            ["Match", "2", "#e7e8e8", "#5f666e"],
+            ["Changed", String(activeFindings.filter((finding) => finding.status === "changed").length), "#f5e9c9", "#89611c"],
+["Missing", String(activeFindings.filter((finding) => finding.status === "missing").length), "#f5d9d7", "#93423f"],
+["New", String(activeFindings.filter((finding) => finding.status === "new").length), "#dce8f3", "#3f6487"],
+["Match", String(activeFindings.filter((finding) => finding.status === "match").length), "#e7e8e8", "#5f666e"],
           ].map(([label, count, bg, color]) => (
             <div
               key={label}
@@ -312,7 +389,10 @@ export default function ResultsPage() {
           ))}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div
+  id="findings-section"
+  className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]"
+>
           <aside>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-serif text-2xl font-semibold text-[#262521]">
@@ -322,12 +402,12 @@ export default function ResultsPage() {
             </div>
 
             <div className="overflow-hidden rounded-[20px] border border-[#e5e2db] bg-white">
-              {findings.map((finding, index) => (
+              {activeFindings.map((finding, index) => (
                 <button
                   key={finding.id}
                   onClick={() => setSelectedId(finding.id)}
                   className={`flex w-full items-center gap-3 px-4 py-4 text-left transition ${
-                    index !== findings.length - 1
+                    index !== activeFindings.length - 1
                       ? "border-b border-[#efede8]"
                       : ""
                   } ${
@@ -440,7 +520,8 @@ export default function ResultsPage() {
           </div>
         </div>
 
-        <section className="mt-10 rounded-[22px] border border-[#e4e1da] bg-[#f6f4ef] p-6 sm:p-8">
+        <section id="clarify-section"
+        className="mt-10 rounded-[22px] border border-[#e4e1da] bg-[#f6f4ef] p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#918d85]">
             Things to clarify
           </p>
@@ -450,7 +531,7 @@ export default function ResultsPage() {
           </h2>
 
           <div className="mt-6 grid gap-3 lg:grid-cols-2">
-            {findings
+            {activeFindings
               .filter((finding) => finding.clarification)
               .map((finding, index) => (
                 <div
@@ -475,8 +556,9 @@ export default function ResultsPage() {
         </section>
 
         <p className="mt-7 text-center text-xs leading-5 text-[#9c9890]">
-          Sample data for demonstration. PlotTwist highlights differences and does
-          not provide legal advice.
+          {isLiveComparison
+  ? "PlotTwist highlights differences and does not provide legal advice."
+  : "Sample data for demonstration. PlotTwist highlights differences and does not provide legal advice."}
         </p>
       </section>
     </main>
