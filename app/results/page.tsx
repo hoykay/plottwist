@@ -171,10 +171,12 @@ function DocumentPanel({
   title,
   type,
   selected,
+  sourceText,
 }: {
   title: string;
   type: "posting" | "offer";
   selected: Finding;
+  sourceText?: string;
 }) {
   const evidence =
     type === "posting" ? selected.postingEvidence : selected.offerEvidence;
@@ -190,25 +192,21 @@ function DocumentPanel({
         </div>
 
         <span className="text-xs text-[#aaa69d]">
-          {type === "posting" ? "job-posting.pdf" : "offer-letter.pdf"}
-        </span>
+  {sourceText ? (type === "posting" ? "Live source" : "Pasted text") : "PDF source"}
+</span>
       </div>
 
       <div className="min-h-[390px] rounded-xl border border-[#ece9e3] bg-[#fbfaf7] p-5">
-        <h4 className="font-serif text-xl font-semibold text-[#232323]">
-          Senior Product Manager
-        </h4>
-
-        <p className="mt-5 text-[13px] leading-7 text-[#65625c]">
-          We&apos;re looking for a Senior Product Manager to join our growing product
-          team.
-        </p>
-
-        <p className="mt-4 text-[13px] leading-7 text-[#65625c]">
-          This role offers meaningful ownership, close collaboration with design and
-          engineering, and the opportunity to shape products used by thousands of
-          customers.
-        </p>
+        {sourceText ? (
+  <p className="whitespace-pre-wrap text-[13px] leading-7 text-[#65625c]">
+    {sourceText.slice(0, 1400)}
+    {sourceText.length > 1400 ? "…" : ""}
+  </p>
+) : (
+  <p className="text-[13px] leading-7 text-[#96928a]">
+    Source text preview unavailable for this input.
+  </p>
+)}
 
         <div className="my-5 rounded-lg border border-[#e7d7a6] bg-[#fff4cf] px-3 py-2.5">
           <p className="text-[13px] font-medium leading-6 text-[#5f512c]">
@@ -216,17 +214,6 @@ function DocumentPanel({
           </p>
         </div>
 
-        <p className="text-[13px] leading-7 text-[#65625c]">
-          You&apos;ll work cross-functionally to define product direction, understand
-          customer needs, and deliver thoughtful improvements across the product
-          experience.
-        </p>
-
-        <div className="mt-6 space-y-2">
-          <div className="h-2 w-full rounded-full bg-[#e8e5df]" />
-          <div className="h-2 w-[88%] rounded-full bg-[#ebe8e2]" />
-          <div className="h-2 w-[72%] rounded-full bg-[#efede8]" />
-        </div>
       </div>
     </article>
   );
@@ -242,6 +229,35 @@ const liveResult = useSyncExternalStore(
 );
 
 const isLiveComparison = liveResult !== null;
+
+const liveSourceTexts = (() => {
+  if (!liveResult) {
+    return {
+      postingText: "",
+      offerText: "",
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(liveResult);
+
+    return {
+      postingText:
+        typeof parsed.sources?.postingText === "string"
+          ? parsed.sources.postingText
+          : "",
+      offerText:
+        typeof parsed.sources?.offerText === "string"
+          ? parsed.sources.offerText
+          : "",
+    };
+  } catch {
+    return {
+      postingText: "",
+      offerText: "",
+    };
+  }
+})();
 
 const activeFindings: Finding[] = (() => {
   if (!liveResult) {
@@ -461,11 +477,13 @@ const activeFindings: Finding[] = (() => {
                 title="Job posting"
                 type="posting"
                 selected={selected}
+                sourceText={liveSourceTexts.postingText}
               />
               <DocumentPanel
                 title="Offer letter"
                 type="offer"
                 selected={selected}
+                sourceText={liveSourceTexts.offerText}
               />
             </div>
 

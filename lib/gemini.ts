@@ -7,7 +7,7 @@ import {
   type PairedExtraction,
 } from "./schemas";
 
-const PRIMARY_MODEL = "gemini-3.8-flash";
+const PRIMARY_MODEL = "gemini-3.5-flash-lite";
 const FALLBACK_MODEL = "gemini-3.6-flash";
 
 function getClient() {

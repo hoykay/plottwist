@@ -155,6 +155,7 @@ function SourceCard({
           </label>
           <input
             type="url"
+            name={fieldName === "postingText" ? "postingUrl" : "offerUrl"}
             placeholder="https://..."
             className="w-full rounded-xl border border-[#dedbd4] bg-white px-4 py-3 text-sm text-[#242424] outline-none transition placeholder:text-[#aaa69d] focus:border-[#23314d]"
           />
@@ -189,20 +190,40 @@ async function handleCompare(event: FormEvent<HTMLFormElement>) {
 
   const postingPdf = formData.get("postingPdf");
   const offerPdf = formData.get("offerPdf");
+  
+  const postingUrl = String(
+  formData.get("postingUrl") ?? "",
+).trim();
+
+const offerUrl = String(
+  formData.get("offerUrl") ?? "",
+).trim();
 
   const hasPostingPdf =
     postingPdf instanceof File && postingPdf.size > 0;
 
   const hasOfferPdf =
     offerPdf instanceof File && offerPdf.size > 0;
+    
+    const hasPostingUrl = postingUrl.length > 0;
+const hasOfferUrl = offerUrl.length > 0;
 
   const hasPostingText = postingText.length >= 80;
   const hasOfferText = offerText.length >= 80;
 
   const isPdfComparison = hasPostingPdf && hasOfferPdf;
   const isTextComparison = hasPostingText && hasOfferText;
+  const isUrlComparison = hasPostingUrl && hasOfferUrl;
 
-  if (!isPdfComparison && !isTextComparison) {
+  const isJobUrlWithOfferText =
+  hasPostingUrl && hasOfferText;
+
+  if (
+  !isPdfComparison &&
+  !isTextComparison &&
+  !isUrlComparison &&
+  !isJobUrlWithOfferText
+) {
     setCompareError(
       "Please use the same input type for both documents: upload two PDFs or paste both documents.",
     );
@@ -225,7 +246,86 @@ async function handleCompare(event: FormEvent<HTMLFormElement>) {
         method: "POST",
         body: pdfFormData,
       });
-    } else {
+    } else if (isJobUrlWithOfferText) {
+  const postingUrlResponse = await fetch("/api/read-url", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      url: postingUrl,
+    }),
+  });
+
+  const postingUrlData = await postingUrlResponse.json();
+
+  if (!postingUrlResponse.ok) {
+    throw new Error(
+      postingUrlData.error ||
+        "PlotTwist couldn't read the job posting URL. Try pasting the text instead.",
+    );
+  }
+
+  response = await fetch("/api/compare", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      postingText: postingUrlData.text,
+      offerText,
+    }),
+  });
+} else if (isUrlComparison) {
+  const [postingUrlResponse, offerUrlResponse] = await Promise.all([
+    fetch("/api/read-url", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url: postingUrl,
+      }),
+    }),
+    fetch("/api/read-url", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url: offerUrl,
+      }),
+    }),
+  ]);
+
+  const postingUrlData = await postingUrlResponse.json();
+  const offerUrlData = await offerUrlResponse.json();
+
+  if (!postingUrlResponse.ok) {
+    throw new Error(
+      postingUrlData.error ||
+        "PlotTwist couldn't read the job posting URL. Try pasting the text instead.",
+    );
+  }
+
+  if (!offerUrlResponse.ok) {
+    throw new Error(
+      offerUrlData.error ||
+        "PlotTwist couldn't read the offer URL. Try pasting the text instead.",
+    );
+  }
+
+  response = await fetch("/api/compare", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      postingText: postingUrlData.text,
+      offerText: offerUrlData.text,
+    }),
+  });
+} else {
       response = await fetch("/api/compare", {
         method: "POST",
         headers: {

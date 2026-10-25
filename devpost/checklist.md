@@ -29,7 +29,7 @@ Build mode: fast
   Learner check: Paste the provided test job posting and offer yourself, run the comparison, inspect several findings and their evidence, and confirm the result feels useful rather than like a generic AI summary.
   Commit: `Add live evidence linked text comparison`
 
-- [ ] **3. PDF job postings and offers can be compared with visible evidence**
+- [x] **3. PDF job postings and offers can be compared with visible evidence**
   Becomes usable: A user can upload PDFs for the original job posting and/or offer and receive the same structured comparison experience as pasted text.
   Why now: PDF support is central to the intended real-world workflow and evidence highlighting is the main technical uncertainty recorded in the spec. Testing it here prevents us from discovering a demo-breaking limitation at the end.
   PRD ref: `prd.md > Features and Behavior > Source Input`, `prd.md > Features and Behavior > Evidence-Linked Findings`
@@ -39,7 +39,7 @@ Build mode: fast
   Learner check: Upload the two test PDFs, click through several findings, and check whether the highlighted evidence makes the comparison easy to trust and understand.
   Commit: `Add PDF comparison and evidence highlighting`
 
-- [ ] **4. Public job URLs work when readable and fail gracefully when blocked**
+- [x] **4. Public job URLs work when readable and fail gracefully when blocked**
   Becomes usable: A user can provide a readable public job-posting URL instead of copying its text, while blocked or unreadable pages never break the comparison experience.
   Why now: URL support adds convenience but is not part of the critical demo path. Building it after text and PDF means the core product remains usable even if websites restrict automated retrieval.
   PRD ref: `prd.md > Features and Behavior > Source Input`, `prd.md > States and Boundaries`
