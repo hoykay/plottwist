@@ -49,7 +49,7 @@ Build mode: fast
   Learner check: Try a public job URL, then try a bad or blocked URL, and confirm the failure message feels clear and tells you exactly what to do next.
   Commit: `Add safe best effort URL input`
 
-- [ ] **5. The complete PlotTwist journey feels polished and demo-ready**
+- [x] **5. The complete PlotTwist journey feels polished and demo-ready**
   Becomes usable: The entire product—from first visit through loading, comparison, evidence review, errors, empty results, and responsive layouts—feels like one intentional consumer product rather than separate hackathon screens.
   Why now: The unique kernel is already working, so visual refinement now improves the judged experience without hiding unfinished core functionality behind polish.
   PRD ref: `prd.md > Look and Feel`, `prd.md > States and Boundaries`, `prd.md > What We're Building`
@@ -66,18 +66,18 @@ Build mode: fast
 
 ## Final Review
 
-- [ ] Final review complete — feedback resolved and learner confirms ready to ship
+- [x] Final review complete — feedback resolved and learner confirms ready to ship
 
 ## Code Tour and App Map
 
-- [ ] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
-- [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
+- [x] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
 Activity and evidence:
-Route and stops:
-Edit outcome:
-Reflection:
-Activity mode:
+Route and stops: Guided code tour through homepage orchestration, Gemini extraction, deterministic comparison, API routes, and results rendering.
+Edit outcome: No additional edit required during the code tour; implementation was already complete and verified.
+Reflection: Gemini extracts structured facts while PlotTwist keeps comparison status logic deterministic and evidence-backed.
+Activity mode: Guided code tour + generated app map.
 
 ## Revisions
