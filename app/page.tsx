@@ -26,27 +26,6 @@ function UploadIcon() {
   );
 }
 
-function FileIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-      <path d="M14 2v6h6" />
-      <path d="M8 13h8" />
-      <path d="M8 17h6" />
-    </svg>
-  );
-}
-
 function CheckIcon() {
   return (
     <svg
@@ -116,7 +95,7 @@ function SourceCard({
       </div>
 
       {mode === "upload" && (
-        <label className="group flex min-h-[205px] cursor-pointer flex-col items-center justify-center rounded-[18px] border border-dashed border-[#cbc7bf] bg-[#fbfaf7] px-6 text-center transition hover:border-[#9a968d] hover:bg-[#f8f6f1]">
+        <label className="group flex min-h-[155px] cursor-pointer flex-col items-center justify-center rounded-[18px] border border-dashed border-[#cbc7bf] bg-[#fbfaf7] px-6 text-center transition hover:border-[#9a968d] hover:bg-[#f8f6f1]">
           <input
   type="file"
   name={fieldName === "postingText" ? "postingPdf" : "offerPdf"}
@@ -144,12 +123,12 @@ function SourceCard({
         <textarea
         name={fieldName}
           placeholder="Paste the document text here..."
-          className="min-h-[205px] w-full resize-none rounded-[18px] border border-[#dedbd4] bg-[#fbfaf7] p-4 text-sm leading-6 text-[#242424] outline-none transition placeholder:text-[#aaa69d] focus:border-[#23314d]"
+          className="min-h-[155px] w-full resize-none rounded-[18px] border border-[#dedbd4] bg-[#fbfaf7] p-4 text-sm leading-6 text-[#242424] outline-none transition placeholder:text-[#aaa69d] focus:border-[#23314d]"
         />
       )}
 
       {mode === "link" && (
-        <div className="flex min-h-[205px] flex-col justify-center rounded-[18px] border border-[#dedbd4] bg-[#fbfaf7] p-5">
+        <div className="flex min-h-[155px] flex-col justify-center rounded-[18px] border border-[#dedbd4] bg-[#fbfaf7] p-5">
           <label className="mb-2 text-sm font-medium text-[#3b3935]">
             Public document or job-posting link
           </label>
@@ -174,6 +153,8 @@ export default function Home() {
 
 const [isComparing, setIsComparing] = useState(false);
 const [compareError, setCompareError] = useState("");
+const [loadingStep, setLoadingStep] = useState(1);
+const [comparisonFailed, setComparisonFailed] = useState(false);
 
 async function handleCompare(event: FormEvent<HTMLFormElement>) {
   event.preventDefault();
@@ -225,15 +206,20 @@ const hasOfferUrl = offerUrl.length > 0;
   !isJobUrlWithOfferText
 ) {
     setCompareError(
-      "Please use the same input type for both documents: upload two PDFs or paste both documents.",
+      "Please add enough content to both documents. Pasted text should be at least 80 characters. You can also upload two PDFs or use a public job-posting link with a pasted offer.",
     );
     return;
   }
 
   setCompareError("");
-  setIsComparing(true);
+setComparisonFailed(false);
+setLoadingStep(1);
+setIsComparing(true);
 
-  try {
+await new Promise((resolve) => setTimeout(resolve, 300));
+setLoadingStep(2);
+
+try {
     let response: Response;
 
     if (isPdfComparison) {
@@ -346,6 +332,14 @@ const hasOfferUrl = offerUrl.length > 0;
       );
     }
 
+    setLoadingStep(3);
+await new Promise((resolve) => setTimeout(resolve, 500));
+
+setLoadingStep(4);
+await new Promise((resolve) => setTimeout(resolve, 500));
+
+sessionStorage.setItem("plottwist-mode", "live");
+
     sessionStorage.setItem(
       "plottwist-live-result",
       JSON.stringify(data),
@@ -353,6 +347,8 @@ const hasOfferUrl = offerUrl.length > 0;
 
     router.push("/results");
   } catch (error) {
+    setComparisonFailed(true);
+
     setCompareError(
       error instanceof Error
         ? error.message
@@ -361,6 +357,144 @@ const hasOfferUrl = offerUrl.length > 0;
   } finally {
     setIsComparing(false);
   }
+}
+if (comparisonFailed && compareError) {
+  return (
+    <main className="min-h-screen overflow-x-hidden bg-[#fafaf8]">
+      <div className="mx-auto flex min-h-screen max-w-[1180px] items-center justify-center px-5 py-12">
+        <section className="w-full max-w-[520px] rounded-[24px] border border-[#e7e5e1] bg-white px-8 py-10 text-center shadow-[0_18px_50px_rgba(35,49,77,0.08)] sm:px-12">
+          <div className="font-serif text-[30px] font-semibold tracking-[-0.04em] text-[#171717]">
+            Plot<span className="text-[#a64b4b]">Twist</span>
+          </div>
+
+          <div className="mx-auto mt-8 flex h-12 w-12 items-center justify-center rounded-full bg-[#fbeaea] text-xl text-[#a64b4b]">
+            !
+          </div>
+
+          <h1 className="mt-6 font-serif text-3xl font-semibold leading-tight tracking-[-0.03em] text-[#171717]">
+            We couldn&apos;t complete this comparison.
+          </h1>
+
+          <p className="mx-auto mt-4 max-w-[390px] text-sm leading-6 text-[#6f6b63]">
+            {compareError}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setComparisonFailed(false);
+              setCompareError("");
+            }}
+            className="mt-8 rounded-xl bg-[#23314D] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[#1b2740]"
+          >
+            Back to comparison
+          </button>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+if (isComparing) {
+  const loadingSteps = [
+    {
+      step: 1,
+      title: "Reading your documents",
+      detail: "Your inputs have been received.",
+    },
+    {
+      step: 2,
+      title: "Extracting key terms",
+      detail: "Finding salary, PTO, bonus, work arrangement, and more.",
+    },
+    {
+      step: 3,
+      title: "Comparing terms",
+      detail: "Checking what changed, disappeared, or was added.",
+    },
+    {
+      step: 4,
+      title: "Preparing your results",
+      detail: "Linking each finding to its supporting evidence.",
+    },
+  ];
+
+  return (
+    <main className="min-h-screen bg-[#fafaf8]">
+      <div className="mx-auto flex min-h-screen max-w-[1180px] items-center justify-center px-5 py-12">
+        <section className="w-full max-w-[520px] rounded-[24px] border border-[#e7e5e1] bg-white px-8 py-10 shadow-[0_18px_50px_rgba(35,49,77,0.08)] sm:px-12">
+          <div className="text-center">
+            <div className="font-serif text-[30px] font-semibold tracking-[-0.04em] text-[#171717]">
+              Plot<span className="text-[#a64b4b]">Twist</span>
+            </div>
+
+            <h1 className="mt-8 font-serif text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-[#171717]">
+              Comparing your documents...
+            </h1>
+
+            <p className="mx-auto mt-4 max-w-[360px] text-sm leading-6 text-[#6f6b63]">
+              We&apos;re extracting key details, checking for differences, and
+              gathering the evidence behind each finding.
+            </p>
+          </div>
+
+          <div className="mt-10 space-y-6">
+            {loadingSteps.map((item) => {
+              const isComplete = loadingStep > item.step;
+              const isActive = loadingStep === item.step;
+
+              return (
+                <div
+                  key={item.step}
+                  className={`flex items-center gap-4 transition-opacity ${
+                    isActive || isComplete ? "opacity-100" : "opacity-45"
+                  }`}
+                >
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                      isComplete
+                        ? "bg-[#23314D] text-white"
+                        : isActive
+                          ? "border-2 border-[#4B5E8A] bg-white"
+                          : "bg-[#e7e5e1]"
+                    }`}
+                  >
+                    {isComplete ? (
+                      <span className="text-sm font-semibold">✓</span>
+                    ) : isActive ? (
+                      <span className="h-3 w-3 animate-pulse rounded-full bg-[#4B5E8A]" />
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <p
+                      className={`text-sm ${
+                        isActive || isComplete
+                          ? "font-semibold text-[#292824]"
+                          : "font-medium text-[#6f6b63]"
+                      }`}
+                    >
+                      {item.title}
+                    </p>
+
+                    {(isActive || isComplete) && (
+                      <p className="mt-1 text-xs text-[#96928a]">
+                        {item.detail}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-10 rounded-xl bg-[#f4f6f8] px-4 py-3 text-center text-xs text-[#6f7782]">
+            Your documents are only used to create this comparison.
+          </div>
+        </section>
+      </div>
+    </main>
+  );
 }
 
   return (
@@ -374,53 +508,126 @@ const hasOfferUrl = offerUrl.length > 0;
             Plot<span className="text-[#a64b4b]">Twist</span>
           </Link>
 
-          <a
-            href="#how-it-works"
-            className="text-sm font-medium text-[#696761] transition hover:text-[#171717]"
-          >
-            How it works
-          </a>
+          <nav className="flex items-center gap-6">
+  <a
+    href="#how-it-works"
+    className="text-sm font-medium text-[#696761] transition hover:text-[#171717]"
+  >
+    How it works
+  </a>
+
+  <a
+    href="#about"
+    className="text-sm font-medium text-[#696761] transition hover:text-[#171717]"
+  >
+    About
+  </a>
+
+  <a
+    href="#tips"
+    className="text-sm font-medium text-[#696761] transition hover:text-[#171717]"
+  >
+    Tips
+  </a>
+</nav>
         </div>
       </header>
 
       <section className="mx-auto max-w-[1180px] px-5 pb-20 pt-14 sm:px-8 sm:pt-20 lg:px-10">
-        <div className="mx-auto max-w-[820px] text-center">
-          <div className="mx-auto mb-5 flex w-fit items-center gap-2 rounded-full border border-[#e5e1d9] bg-[#fdfcf9] px-3 py-1.5 text-xs font-medium text-[#6e6a63]">
-            <FileIcon />
-            Job offer comparison
-          </div>
+        <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:gap-14">
+  <div className="text-left">
+    <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#96928a]">
+      Compare the posting with the offer
+    </p>
 
-          <h1 className="font-serif text-[44px] font-medium leading-[1.03] tracking-[-0.045em] text-[#171717] sm:text-[58px] lg:text-[68px]">
-            Did the offer match the job you{" "}
-            <span className="italic text-[#a64b4b]">applied for?</span>
-          </h1>
+    <h1 className="max-w-[620px] font-serif text-[46px] font-medium leading-[1.02] tracking-[-0.04em] text-[#171717] sm:text-[58px]">
+      You worked hard
+      <br />
+      to get the offer.
+      <br />
+      <span className="text-[#a64b4b]">
+        Now make sure it&apos;s
+        <br />
+        what you expected.
+      </span>
+    </h1>
 
-          <p className="mx-auto mt-6 max-w-[640px] text-[16px] leading-7 text-[#74716a] sm:text-[17px]">
-            Compare the original job posting with your final offer. See what changed,
-            what disappeared, and what to clarify before you sign.
-          </p>
+    <p className="mt-6 max-w-[560px] text-[16px] leading-7 text-[#6f6b63]">
+      Compare the original job posting with your final offer. See what changed,
+      what disappeared, and what to clarify before you sign.
+    </p>
+
+    <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-[#6f6b63]">
+      <span className="flex items-center gap-2">
+        <CheckIcon />
+        Clear differences
+      </span>
+
+      <span className="flex items-center gap-2">
+        <CheckIcon />
+        Side-by-side evidence
+      </span>
+
+      <span className="flex items-center gap-2">
+        <CheckIcon />
+        Practical next steps
+      </span>
+    </div>
+  </div>
+
+  <div className="relative mx-auto flex min-h-[330px] w-full max-w-[420px] items-center justify-center">
+    <div className="absolute h-[260px] w-[260px] rounded-full bg-[#fbefe7]" />
+
+    <div className="relative flex items-end gap-4">
+      <div className="-rotate-6 rounded-[18px] border border-[#d8d5cf] bg-white p-5 shadow-[0_18px_40px_rgba(35,49,77,0.10)]">
+        <div className="mb-4 flex items-center justify-between gap-6">
+          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#23314D]">
+            Job posting
+          </span>
+          <span className="h-2 w-2 rounded-full bg-[#b9822e]" />
         </div>
 
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-sm text-[#68655f] sm:mt-12">
-          <span className="flex items-center gap-2">
-            <CheckIcon />
-            Evidence linked
-          </span>
-          <span className="flex items-center gap-2">
-            <CheckIcon />
-            Clear differences
-          </span>
-          <span className="flex items-center gap-2">
-            <CheckIcon />
-            No account required
-          </span>
+        <div className="space-y-2">
+          <div className="h-2 w-28 rounded-full bg-[#d9dde4]" />
+          <div className="h-2 w-32 rounded-full bg-[#e6e3dd]" />
+          <div className="h-2 w-24 rounded-full bg-[#e6e3dd]" />
+          <div className="mt-4 h-7 rounded-md bg-[#fff0c7]" />
+          <div className="h-2 w-28 rounded-full bg-[#e6e3dd]" />
+          <div className="h-2 w-20 rounded-full bg-[#e6e3dd]" />
         </div>
+      </div>
+
+      <div className="rotate-6 rounded-[18px] border border-[#d8d5cf] bg-white p-5 shadow-[0_18px_40px_rgba(35,49,77,0.10)]">
+        <div className="mb-4 flex items-center justify-between gap-6">
+          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#23314D]">
+            Offer
+          </span>
+          <span className="h-2 w-2 rounded-full bg-[#a64b4b]" />
+        </div>
+
+        <div className="space-y-2">
+          <div className="h-2 w-24 rounded-full bg-[#d9dde4]" />
+          <div className="h-2 w-32 rounded-full bg-[#e6e3dd]" />
+          <div className="mt-4 h-7 rounded-md bg-[#fbe0df]" />
+          <div className="h-2 w-28 rounded-full bg-[#e6e3dd]" />
+          <div className="h-2 w-20 rounded-full bg-[#e6e3dd]" />
+          <div className="h-2 w-24 rounded-full bg-[#e6e3dd]" />
+        </div>
+      </div>
+    </div>
+
+    <div className="absolute bottom-5 left-1/2 flex h-16 w-16 -translate-x-1/2 items-center justify-center rounded-full border-[5px] border-[#23314D] bg-[#fafaf8] shadow-md">
+      <span className="text-2xl">⌕</span>
+    </div>
+  </div>
+</div>
 
         <form
         id="compare-form"
   onSubmit={handleCompare}
   className="..."
 >
+  <div className="grid gap-5 lg:grid-cols-2">
           <SourceCard
             number="1"
             title="Original job posting"
@@ -434,6 +641,7 @@ const hasOfferUrl = offerUrl.length > 0;
             fieldName="offerText"
             subtitle="The offer letter or terms you actually received."
           />
+         </div>
         </form>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3">
@@ -441,9 +649,9 @@ const hasOfferUrl = offerUrl.length > 0;
   type="submit"
   form="compare-form"
   disabled={isComparing}
-  className="..."
+  className="w-full max-w-[320px] rounded-xl bg-[#23314D] px-8 py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1b2740] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#4B5E8A] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
 >
-  {isComparing ? "Comparing your offer..." : "Compare my offer"}
+  {isComparing ? "Comparing your offer..." : "Compare my offer →"}
 </button>
 
 {compareError && (
@@ -452,16 +660,20 @@ const hasOfferUrl = offerUrl.length > 0;
   </p>
 )}
 
-          <Link
-            href="/results"
-            className="text-sm font-semibold text-[#a64b4b] underline decoration-[#d8b8b8] underline-offset-4 transition hover:text-[#833939]"
-          >
-            Try a sample
-          </Link>
+          <button
+  type="button"
+  onClick={() => {
+  sessionStorage.setItem("plottwist-mode", "sample");
+  sessionStorage.removeItem("plottwist-live-result");
+  router.push("/results");
+}}
+className="w-full max-w-[260px] rounded-xl border border-[#c9827d] bg-white px-7 py-3 text-sm font-semibold text-[#a64b4b] transition hover:bg-[#fff7f5] focus:outline-none focus:ring-2 focus:ring-[#d8b0aa] focus:ring-offset-2"
+>
+  Try a sample
+</button>
 
           <p className="mt-2 text-center text-xs leading-5 text-[#9b978f]">
-            PlotTwist does not provide legal advice. It helps you identify differences
-            worth reviewing.
+Private by design. Your documents are only used to create this comparison.            worth reviewing.
           </p>
         </div>
       </section>
@@ -506,6 +718,81 @@ const hasOfferUrl = offerUrl.length > 0;
           </div>
         </div>
       </section>
+      <section
+  id="about"
+  className="border-t border-[#ece9e3] bg-white px-5 py-16 sm:px-8"
+>
+  <div className="mx-auto max-w-[900px]">
+    <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-[#96928a]">
+      About PlotTwist
+    </p>
+
+    <h2 className="mx-auto mt-4 max-w-[680px] text-center font-serif text-3xl font-semibold tracking-[-0.03em] text-[#171717]">
+      Know what changed before you sign.
+    </h2>
+
+    <p className="mx-auto mt-5 max-w-[680px] text-center text-sm leading-7 text-[#6f6b63]">
+      PlotTwist compares the job posting you applied for with the offer you
+      actually received. It highlights changed, missing, new, and matching
+      employment terms and links important findings back to the evidence.
+    </p>
+
+    <p className="mx-auto mt-3 max-w-[680px] text-center text-sm leading-7 text-[#96928a]">
+      PlotTwist is designed to help you review and ask better questions. It
+      does not provide legal advice or make decisions for you.
+    </p>
+  </div>
+</section>
+
+<section
+  id="tips"
+  className="border-t border-[#ece9e3] bg-[#f6f4ef] px-5 py-16 sm:px-8"
+>
+  <div className="mx-auto max-w-[900px]">
+    <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-[#96928a]">
+      Tips
+    </p>
+
+    <h2 className="mt-4 text-center font-serif text-3xl font-semibold tracking-[-0.03em] text-[#171717]">
+      Get the clearest comparison.
+    </h2>
+
+    <div className="mt-10 grid gap-4 sm:grid-cols-3">
+      <div className="rounded-[18px] border border-[#e7e5e1] bg-white p-6">
+        <span className="font-serif text-xl italic text-[#a64b4b]">01</span>
+        <h3 className="mt-3 font-semibold text-[#292824]">
+          Use the full documents
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-[#77736b]">
+          Include the complete posting and offer so important terms are not
+          missed.
+        </p>
+      </div>
+
+      <div className="rounded-[18px] border border-[#e7e5e1] bg-white p-6">
+        <span className="font-serif text-xl italic text-[#a64b4b]">02</span>
+        <h3 className="mt-3 font-semibold text-[#292824]">
+          Review the evidence
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-[#77736b]">
+          Open each finding and check the exact language PlotTwist used for the
+          comparison.
+        </p>
+      </div>
+
+      <div className="rounded-[18px] border border-[#e7e5e1] bg-white p-6">
+        <span className="font-serif text-xl italic text-[#a64b4b]">03</span>
+        <h3 className="mt-3 font-semibold text-[#292824]">
+          Clarify important changes
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-[#77736b]">
+          Use the suggested questions as a starting point before accepting or
+          signing your offer.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
     </main>
   );
 }

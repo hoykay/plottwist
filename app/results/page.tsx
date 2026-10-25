@@ -3,17 +3,32 @@
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 
-function subscribeToLiveResult() {
-  return () => {};
+function subscribeToLiveResult(callback: () => void) {
+  const handleChange = () => callback();
+
+  window.addEventListener("storage", handleChange);
+  window.addEventListener("plottwist-result-change", handleChange);
+
+  return () => {
+    window.removeEventListener("storage", handleChange);
+    window.removeEventListener("plottwist-result-change", handleChange);
+  };
 }
 
 function getLiveResultSnapshot() {
+  const mode = sessionStorage.getItem("plottwist-mode");
+
+  if (mode === "sample") {
+    return null;
+  }
+
   return sessionStorage.getItem("plottwist-live-result");
 }
 
 function getServerLiveResultSnapshot() {
   return null;
 }
+
 
 type Status = "changed" | "missing" | "new" | "match";
 
@@ -192,7 +207,7 @@ function DocumentPanel({
         </div>
 
         <span className="text-xs text-[#aaa69d]">
-  {sourceText ? (type === "posting" ? "Live source" : "Pasted text") : "PDF source"}
+  {sourceText ? (type === "posting" ? "Live source" : "Pasted text") : "Evidence view"}
 </span>
       </div>
 
@@ -204,7 +219,7 @@ function DocumentPanel({
   </p>
 ) : (
   <p className="text-[13px] leading-7 text-[#96928a]">
-    Source text preview unavailable for this input.
+    Full source preview unavailable for this input.
   </p>
 )}
 
